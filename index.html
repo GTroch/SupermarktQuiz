@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz-Duell: Verkaufsförderung im Supermarkt · WR 10</title>
+<style>
+:root{
+  --navy:#0F2130; --grau:#56676F; --akzent:#C1652B; --akzent-hell:#f8e3d4;
+  --gruen:#2f7d4f; --gruen-hell:#e1f1e6; --rot:#b3392f;
+  --gold:#e0a400; --bg:#f6f4ef; --linie:#d9dcd8;
+  --font:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  --head:"Archivo","Segoe UI",system-ui,Arial,sans-serif;
+  --p1:#2F6690; --p1h:#dce8f2; --p2:#B3395F; --p2h:#f6dfe6;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);font-family:var(--font);font-size:17px;line-height:1.5;min-height:100vh}
+header{background:var(--navy);color:#fff;padding:16px 20px}
+header .inner{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.kicker{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#f0b48c;margin:0}
+h1{font-family:var(--head);font-size:clamp(22px,3.2vw,30px);margin:2px 0 0;line-height:1.15}
+main{max-width:1000px;margin:0 auto;padding:22px 16px 50px}
+h2{font-family:var(--head);font-size:24px;margin:0 0 6px}
+h3{font-family:var(--head);font-size:17px;margin:0 0 8px}
+.card{background:#fff;border:1px solid var(--linie);border-radius:12px;padding:20px}
+.btn{border:1px solid var(--navy);background:var(--navy);color:#fff;font:inherit;font-size:16px;padding:10px 18px;border-radius:8px;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--navy)}
+.btn.akzent{background:var(--akzent);border-color:var(--akzent)}
+.btn.klein{font-size:14px;padding:6px 12px}
+.btn:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible{outline:3px solid #f0b48c;outline-offset:2px}
+.hidden{display:none!important}
+/* Setup */
+.setup{display:grid;gap:18px}
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.wahl{position:relative}
+.wahl input{position:absolute;opacity:0;pointer-events:none}
+.wahl label{display:block;border:2px solid var(--linie);border-radius:10px;padding:12px;cursor:pointer;background:#fff;height:100%}
+.wahl label b{display:block;font-family:var(--head);font-size:17px}
+.wahl label span{font-size:13.5px;color:var(--grau)}
+.wahl input:checked+label{border-color:var(--akzent);background:var(--akzent-hell)}
+.wahl input:focus-visible+label{outline:3px solid #f0b48c}
+.namen{display:flex;gap:12px;flex-wrap:wrap}
+.namen label{flex:1;min-width:200px;font-size:14px;color:var(--grau)}
+.namen input{display:block;width:100%;font:inherit;padding:9px 11px;border:1px solid var(--linie);border-radius:8px;margin-top:4px;color:var(--navy)}
+.kats{display:flex;flex-wrap:wrap;gap:8px}
+.kats label{display:flex;align-items:center;gap:6px;border:1px solid var(--linie);border-radius:20px;padding:5px 12px;cursor:pointer;background:#fff;font-size:14.5px}
+.kats input{accent-color:var(--akzent);width:16px;height:16px}
+.info{font-size:14px;color:var(--grau)}
+/* Spiel */
+.scorebar{display:flex;gap:12px;margin-bottom:14px}
+.konto{flex:1;border-radius:12px;padding:10px 14px;border:2px solid transparent;background:#fff;transition:all .2s}
+.konto .n{font-size:14px;font-weight:600}
+.konto .s{font-family:var(--head);font-size:26px;line-height:1.1}
+.konto.p1{border-color:var(--p1h)} .konto.p2{border-color:var(--p2h)}
+.konto.aktiv.p1{border-color:var(--p1);background:var(--p1h);transform:scale(1.02)}
+.konto.aktiv.p2{border-color:var(--p2);background:var(--p2h);transform:scale(1.02)}
+.fortschritt{display:flex;justify-content:space-between;font-size:14px;color:var(--grau);margin-bottom:6px}
+.balken{height:7px;background:#e4e6e2;border-radius:4px;overflow:hidden;margin-bottom:16px}
+.balken div{height:100%;background:var(--akzent);transition:width .3s}
+.frage{border-radius:14px;border:2px solid var(--linie);background:#fff;overflow:hidden}
+.frage .band{padding:10px 18px;font-weight:700;font-size:14.5px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.frage .wer{font-size:15px}
+.frage .body{padding:22px 22px 18px}
+.begriff{font-family:var(--head);font-size:clamp(30px,5vw,46px);margin:2px 0 6px;line-height:1.1}
+.qtext{font-size:clamp(19px,2.4vw,24px);line-height:1.4;margin:0}
+.loesung{margin-top:18px;border-top:2px dashed var(--akzent);padding-top:14px;font-size:17px;animation:ein .3s}
+.loesung .tit{font-size:13px;font-weight:700;color:var(--akzent);text-transform:uppercase;letter-spacing:.06em}
+@keyframes ein{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}
+.aktionen{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px}
+.timer{font-family:var(--head);font-size:20px;color:var(--grau);margin-left:auto}
+.timer.knapp{color:var(--rot)}
+.bewerten{margin-top:16px}
+.bewerten p{margin:0 0 8px;font-weight:600}
+.sterne{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sterne button{border:2px solid var(--linie);background:#fff;border-radius:10px;padding:10px 6px;cursor:pointer;font:inherit;color:var(--navy)}
+.sterne button:hover{border-color:var(--gold);background:#fff8e1}
+.sterne .st{font-size:24px;letter-spacing:2px;display:block;color:var(--gold);min-height:32px}
+.sterne .st .leer{color:#d6d6d6}
+.sterne small{display:block;font-size:12.5px;color:var(--grau);line-height:1.3}
+@media (max-width:600px){.sterne{grid-template-columns:repeat(2,1fr)}}
+.flug{position:fixed;font-size:34px;pointer-events:none;z-index:50;transition:all .8s cubic-bezier(.3,.7,.4,1)}
+/* Ergebnis */
+.sieger{text-align:center;padding:10px 0 18px}
+.sieger .pokal{font-size:64px;line-height:1}
+.sieger h2{font-size:30px;margin-top:6px}
+table.verlauf{width:100%;border-collapse:collapse;font-size:15px;margin-top:10px}
+.verlauf th,.verlauf td{border-bottom:1px solid #eee;padding:7px 6px;text-align:left;vertical-align:top}
+.verlauf th{color:var(--grau);font-size:13px;font-weight:600}
+.verlauf .gs{color:var(--gold);white-space:nowrap}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:20px;background:#eef1f3;color:var(--grau)}
+.regeln{font-size:14.5px;color:var(--grau);margin:0;padding-left:18px}
+footer{max-width:1000px;margin:0 auto;padding:0 16px 30px;color:var(--grau);font-size:13px}
+kbd{border:1px solid #ccc;border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:12px;background:#fff}
+</style>
+</head>
+<body>
+<header><div class="inner">
+  <div><p class="kicker">Wirtschaft und Recht · Jahrgangsstufe 10</p><h1>Quiz-Duell: Verkaufsförderung im Supermarkt</h1></div>
+  <button class="btn ghost klein hidden" id="abbrechen">⟲ Neues Spiel</button>
+</div></header>
+
+<main>
+<!-- SETUP -->
+<section id="setup" class="setup">
+  <div class="card">
+    <h3>1 · Spielmodus</h3>
+    <div class="opt-grid">
+      <div class="wahl"><input type="radio" name="modus" id="m-einzel" value="einzel" checked><label for="m-einzel"><b>🧑 Einzeln lernen</b><span>Du beantwortest alle Fragen und bewertest dich selbst ehrlich.</span></label></div>
+      <div class="wahl"><input type="radio" name="modus" id="m-team" value="team"><label for="m-team"><b>👥 Team</b><span>Ihr beratet gemeinsam und sammelt Sterne für euer Team.</span></label></div>
+      <div class="wahl"><input type="radio" name="modus" id="m-duell" value="duell"><label for="m-duell"><b>⚔️ Wettbewerb</b><span>Zwei Spieler – die Fragen gehen abwechselnd an Spieler 1 und Spieler 2.</span></label></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>2 · Namen</h3>
+    <div class="namen">
+      <label id="lab-n1">Name<input id="n1" maxlength="20" placeholder="Spieler 1"></label>
+      <label id="lab-n2" class="hidden">Name Spieler 2<input id="n2" maxlength="20" placeholder="Spieler 2"></label>
+    </div>
+    <p class="info" style="margin:8px 0 0">Vornamen oder Spitznamen genügen. Es wird nichts gespeichert oder verschickt.</p>
+  </div>
+
+  <div class="card">
+    <h3>3 · Komplexitätsstufe</h3>
+    <div class="opt-grid">
+      <div class="wahl"><input type="radio" name="stufe" id="s-1" value="1" checked><label for="s-1"><b>🌱 Anfänger</b><span>Grundwissen: Maßnahmen beschreiben und Fachbegriffe erklären (<span id="c1"></span> Karten).</span></label></div>
+      <div class="wahl"><input type="radio" name="stufe" id="s-2" value="2"><label for="s-2"><b>🚀 Könner</b><span>Zusammenhänge, Rechnen, Widersprüche lösen, eigene Ideen (<span id="c2"></span> Karten).</span></label></div>
+      <div class="wahl"><input type="radio" name="stufe" id="s-0" value="0"><label for="s-0"><b>🎲 Gemischt</b><span>Alle Karten beider Stufen (<span id="c0"></span> Karten).</span></label></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>4 · Anzahl der Fragen</h3>
+    <div class="opt-grid" id="anzahl"></div>
+    <p class="info" id="anzahl-info" style="margin:8px 0 0"></p>
+  </div>
+
+  <div class="card">
+    <h3>5 · Optionen</h3>
+    <p class="info" style="margin:0 0 6px">Bereiche (mindestens einen auswählen):</p>
+    <div class="kats" id="kats"></div>
+    <p class="info" style="margin:14px 0 6px">Bedenkzeit pro Frage:</p>
+    <div class="kats" id="zeit">
+      <label><input type="radio" name="zeit" value="0" checked> ohne</label>
+      <label><input type="radio" name="zeit" value="30"> 30 s</label>
+      <label><input type="radio" name="zeit" value="60"> 60 s</label>
+      <label><input type="radio" name="zeit" value="90"> 90 s</label>
+    </div>
+  </div>
+
+  <div class="card" style="display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+    <ul class="regeln">
+      <li>Erst erscheint die Frage oder der Begriff – antwortet laut (oder notiert Stichpunkte).</li>
+      <li>Dann die Lösung aufdecken und mit <b>0–3 Sternen</b> bewerten. Im Wettbewerb bewertet der Gegner.</li>
+      <li>Tastatur: <kbd>Leertaste</kbd> Lösung · <kbd>0</kbd>–<kbd>3</kbd> Sterne</li>
+    </ul>
+    <button class="btn akzent" id="start" style="font-size:18px;padding:12px 26px">Spiel starten ▶</button>
+  </div>
+</section>
+
+<!-- SPIEL -->
+<section id="spiel" class="hidden">
+  <div class="scorebar" id="scorebar"></div>
+  <div class="fortschritt"><span id="f-text"></span><span id="f-stufe"></span></div>
+  <div class="balken"><div id="f-balken"></div></div>
+  <div class="frage" id="frage">
+    <div class="band" id="band"><span id="kat"></span><span class="wer" id="wer"></span></div>
+    <div class="body">
+      <div id="begriff" class="begriff hidden"></div>
+      <p class="qtext" id="qtext"></p>
+      <div class="loesung hidden" id="loesung"><div class="tit">Lösung</div><div id="atext"></div></div>
+      <div class="aktionen" id="aktionen">
+        <button class="btn" id="zeigen">Lösung anzeigen</button>
+        <span class="timer hidden" id="timer"></span>
+      </div>
+      <div class="bewerten hidden" id="bewerten">
+        <p id="bew-frage">Wie gut wurde die Frage beantwortet?</p>
+        <div class="sterne">
+          <button data-s="0"><span class="st"><span class="leer">☆☆☆</span></span><b>0</b><small>nicht gewusst / falsch</small></button>
+          <button data-s="1"><span class="st">★<span class="leer">☆☆</span></span><b>1</b><small>richtiger Ansatz</small></button>
+          <button data-s="2"><span class="st">★★<span class="leer">☆</span></span><b>2</b><small>größtenteils richtig</small></button>
+          <button data-s="3"><span class="st">★★★</span><b>3</b><small>vollständig, mit Fachbegriffen</small></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ERGEBNIS -->
+<section id="ergebnis" class="hidden">
+  <div class="card">
+    <div class="sieger" id="sieger"></div>
+    <div class="scorebar" id="end-score"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:6px 0 16px">
+      <button class="btn akzent" id="nochmal">Gleiche Einstellungen, neue Fragen</button>
+      <button class="btn" id="schwach">Schwache Karten wiederholen</button>
+      <button class="btn ghost" id="neu">Zurück zum Start</button>
+    </div>
+    <h3>Rückblick</h3>
+    <table class="verlauf" id="verlauf"></table>
+  </div>
+</section>
+</main>
+<footer>Fragen aus den Lernkärtchen „Verkaufsförderung im Supermarkt“ · WR 10 · LB 1 Ökonomisches Handeln auf dem Markt</footer>
+
+<script>
+const DATA = {"cards": [{"id": "R1", "kat": "R", "q": "Was versteht man unter der „Bremszone“? Welche Waren liegen dort und warum?", "a": "Bereich direkt hinter dem Eingang. Kunden kommen im schnellen „Straßentempo“ herein und sollen abgebremst werden. Dort liegen bunte, frische Waren (Obst, Gemüse, Blumen, Backwaren): Sie verlangsamen, heben die Stimmung und lassen den ganzen Markt frisch wirken.", "afb": "I/II", "stufe": 1}, {"id": "R2", "kat": "R", "q": "Erkläre den Begriff „Kontaktstrecke“ und nenne zwei Maßnahmen, die sie verlängern.", "a": "Weg, den Kunden im Markt zurücklegen und auf dem sie Waren sehen. Je länger, desto mehr Spontankäufe. Maßnahmen: Grundnahrungsmittel (Milch, Brot) ganz hinten; ein Eingang mit Drehkreuz und vorgegebener Laufrichtung; keine Abkürzungen zur Kasse.", "afb": "II", "stufe": 2}, {"id": "R3", "kat": "R", "q": "Warum stehen vor dem Markt fast nur große Einkaufswagen? Nenne eine Gegenstrategie.", "a": "Im großen Wagen wirken wenige Produkte wie „fast nichts“ – man füllt unbewusst nach. Beim Korb spürt man dagegen das Gewicht. Gegenstrategie: für kleine Einkäufe einen Korb nehmen und mit Einkaufszettel einkaufen.", "afb": "II", "stufe": 1}, {"id": "R4", "kat": "R", "q": "Warum gehört die Kassenzone zu den umsatzstärksten Flächen im Markt?", "a": "Beim Warten entstehen Langeweile und Zeit zum Schauen. Angeboten wird „Quengelware“: kleine, günstige Artikel (Süßigkeiten, Kaugummi, Batterien) in Kinder-Augenhöhe. Kleine Beträge werden kaum abgewogen – typische Impulskäufe (laut Material bis zu 7 % des Umsatzes).", "afb": "II", "stufe": 2}, {"id": "P1", "kat": "P", "q": "Nenne die vier Regalzonen von oben nach unten und gib jeweils an, was dort typischerweise steht.", "a": "Reckzone (über ca. 160 cm): günstige Eigenmarken, Seltenes. Sichtzone (ca. 120–160 cm): teure Marken, höchster Gewinn. Greifzone (ca. 80–120 cm): gewinnstarke Produkte, Neuheiten. Bückzone (unter ca. 80 cm): günstige Eigenmarken, Großpackungen, Kinderprodukte.", "afb": "I", "stufe": 1}, {"id": "P2", "kat": "P", "q": "Was ist ein „Stopper“? Erkläre seine Wirkung.", "a": "Ein Warenaufbau mitten im Laufweg, oft mit großem Preisschild. Er bremst die Kunden, zieht Aufmerksamkeit auf sich und wirkt wie ein Sonderangebot – auch wenn er keines ist. Weil die Vergleichsprodukte weit weg im Regal stehen, wird kaum verglichen.", "afb": "I/II", "stufe": 1}, {"id": "P3", "kat": "P", "q": "Was ist eine Verbund- oder Zweitplatzierung? Nenne ein Beispiel.", "a": "Ein Produkt steht zusätzlich außerhalb seines Stammregals, oft neben Produkten, die man zusammen verwendet. Beispiel: Sahne und Tortenböden neben den Erdbeeren, Dips neben den Chips. Das erinnert an den Kauf und macht ihn bequem.", "afb": "I/II", "stufe": 1}, {"id": "P4", "kat": "P", "q": "Warum lohnt es sich, sich im Regal zu bücken oder zu strecken?", "a": "In Augen- und Greifhöhe stehen die Produkte, an denen der Händler am meisten verdient, meist teure Marken. Günstigere, oft gleichwertige Eigenmarken stehen oben (Reckzone) oder unten (Bückzone).", "afb": "II", "stufe": 1}, {"id": "P5", "kat": "P", "q": "Warum sind die Regalköpfe (Stirnseiten am Ende eines Gangs) so begehrt?", "a": "Man sieht sie beim Abbiegen von mehreren Seiten und ohne in den Gang zu gehen. Dort stehen Aktionsware und saisonale Produkte. Viele Kunden halten alles, was dort steht, automatisch für ein Angebot.", "afb": "II", "stufe": 2}, {"id": "S1", "kat": "S", "q": "Erkläre den Begriff „Priming“ am Beispiel der Backstation am Eingang.", "a": "Priming: Ein Reiz aktiviert unbewusst Gedanken oder Bedürfnisse und beeinflusst so späteres Verhalten. Der Duft frischer Brezen weckt Hunger und Genuss – danach greift man im ganzen Markt eher zu Snacks und Lebensmitteln, die man nicht geplant hatte.", "afb": "II", "stufe": 2}, {"id": "S2", "kat": "S", "q": "Was versteht man unter Farbpsychologie? Nenne zwei Beispiele aus dem Supermarkt.", "a": "Farben lösen Gefühle und Erwartungen aus und werden gezielt eingesetzt. Rot = Signal, „Schnäppchen“ (Preisschilder). Grün = Frische, Natur, Bio. Licht wirkt ähnlich: rötliches Licht an der Fleischtheke, warmes Licht über Backwaren.", "afb": "I/II", "stufe": 1}, {"id": "S3", "kat": "S", "q": "Wie beeinflusst Hintergrundmusik das Einkaufsverhalten?", "a": "Ruhige, eher langsame und unaufdringliche Musik sorgt für gute Stimmung. Kunden gehen langsamer, bleiben länger, sehen mehr Produkte und kaufen mehr.", "afb": "II", "stufe": 1}, {"id": "S4", "kat": "S", "q": "Warum achten Supermärkte auf Temperatur und Licht?", "a": "Wer sich wohlfühlt, bleibt länger (rund 19 °C gelten als angenehm). Gezielte Beleuchtung lässt Ware frischer und appetitlicher wirken: Obst knackiger, Fleisch roter, Brot goldener.", "afb": "II", "stufe": 1}, {"id": "M1", "kat": "M", "q": "Was ist der Grundpreis und warum ist er für Verbraucher so wichtig?", "a": "Preis pro Mengeneinheit (je kg, Liter oder 100 g). Er steht auf dem Regalschild (Pflicht nach § 4 PAngV). Nur mit ihm lassen sich unterschiedliche Packungsgrößen vergleichen. Formel: Preis ÷ Menge × Bezugsmenge.", "afb": "I/II", "stufe": 1}, {"id": "M2", "kat": "M", "q": "Warum heißt es oft 9,99 € statt 10,00 €?", "a": "Preisschwelle („gebrochener Preis“): Wir lesen von links und orientieren uns an der ersten Ziffer. „Neun-irgendwas“ wirkt deutlich billiger als „zehn“, obwohl es nur 1 Cent Unterschied ist.", "afb": "II", "stufe": 1}, {"id": "M3", "kat": "M", "q": "Ist die Großpackung immer günstiger? Begründe.", "a": "Nein. Großpackungen wirken günstig („groß = billig“), oft ist aber die kleinere Packung pro 100 g billiger. Außerdem wird, was da ist, auch verbraucht. Nur der Vergleich der Grundpreise zeigt, was wirklich günstiger ist.", "afb": "II", "stufe": 2}, {"id": "M4", "kat": "M", "q": "Was ist eine „Mogelpackung“ (Shrinkflation)?", "a": "Die Füllmenge sinkt, Preis und Verpackung bleiben (fast) gleich. Das ist eine versteckte Preiserhöhung, die kaum jemand bemerkt, weil wir uns Preise merken, aber kaum Füllmengen.", "afb": "I/II", "stufe": 1}, {"id": "M5", "kat": "M", "q": "Wann lohnt sich ein „3 für 2“-Angebot nicht?", "a": "Wenn man nicht alle drei Packungen braucht oder sie vorher verderben; wenn ein anderes Produkt (z. B. die Eigenmarke) trotzdem einen niedrigeren Grundpreis hat; wenn man nur wegen des Angebots kauft, was nicht auf der Liste stand.", "afb": "II/III", "stufe": 2}, {"id": "Ψ1", "kat": "Ψ", "q": "Erkläre den Halo-Effekt und nenne ein Beispiel aus dem Supermarkt.", "a": "Ein auffälliges positives Merkmal „überstrahlt“ das Gesamturteil. Beispiel: Die frische, bunte Obstabteilung am Eingang lässt den ganzen Markt frisch und hochwertig wirken. Ebenso wirkt ein Produkt mit Bio- oder Regional-Hinweis insgesamt gesünder.", "afb": "II", "stufe": 2}, {"id": "Ψ2", "kat": "Ψ", "q": "Was bedeutet Verlustaversion? Wie wird sie im Supermarkt genutzt?", "a": "Verluste schmerzen uns stärker, als gleich große Gewinne uns freuen. Schilder wie „Nur heute –30 %“ oder ablaufende Coupons erzeugen das Gefühl, etwas zu verlieren, wenn man nicht kauft – man greift schnell zu.", "afb": "II", "stufe": 2}, {"id": "Ψ3", "kat": "Ψ", "q": "Was ist der Knappheitseffekt? Wie unterscheidet er sich von der Verlustaversion?", "a": "Was knapp erscheint, halten wir für wertvoller („Nur solange der Vorrat reicht“, „limitiert“, halb leerer Aktionstisch). Knappheit steigert den Wert des Produkts; Verlustaversion beschreibt die Angst, eine Gelegenheit zu verlieren. Beide wirken oft zusammen.", "afb": "II/III", "stufe": 2}, {"id": "Ψ4", "kat": "Ψ", "q": "Erkläre Reziprozität am Beispiel einer Kostprobe.", "a": "Reziprozität: Wer etwas geschenkt bekommt, möchte sich revanchieren. Nach einer Gratis-Kostprobe an der Käsetheke fühlen sich viele verpflichtet, etwas zu kaufen – auch wenn sie es nicht geplant hatten.", "afb": "II", "stufe": 1}, {"id": "Ψ5", "kat": "Ψ", "q": "Wie wirkt der Ankereffekt bei „Statt 14,99 € jetzt 9,99 €“?", "a": "Die erste Zahl (14,99 €) setzt einen Anker; der neue Preis wirkt daneben wie ein Schnäppchen. Seit 2022 muss als Vergleich der niedrigste Preis der letzten 30 Tage angegeben werden (§ 11 PAngV) – „Mondpreise“ sind unzulässig.", "afb": "II", "stufe": 2}, {"id": "D2", "kat": "D", "q": "Warum zahlen Hersteller für einen Platz in der Sichtzone mehr als für die Bückzone? Warum stehen Kinder-Cornflakes trotzdem gern unten?", "a": "In Augenhöhe sehen Kunden das Produkt zuerst und greifen am häufigsten zu – mehr Absatz, also ist der Platz mehr wert. Kinder-Cornflakes sind die Ausnahme: Zielgruppe sind Kinder, für sie ist die Bückzone genau Augenhöhe. Das Kind entdeckt das Produkt und bittet die Eltern darum (Quengel-Effekt).", "afb": "II", "stufe": 2}, {"id": "D3", "kat": "D", "q": "Müsli: weiter 2,49 €, aber 400 g statt 500 g. Um wie viel Prozent ist es teurer geworden – und warum nicht um 20 %?", "a": "Grundpreis vorher 2,49 € ÷ 0,5 kg = 4,98 €/kg, nachher 2,49 € ÷ 0,4 kg = 6,225 €/kg; Steigerung 1,245 € ÷ 4,98 € = 25 %. Die 20 % beziehen sich auf die Menge (100 g von 500 g), die 25 % auf den Preis je kg – unterschiedliche Grundwerte. Wer nur auf die Menge schaut, unterschätzt die Preiserhöhung.", "afb": "II", "stufe": 2}, {"id": "D4", "kat": "D", "q": "Lange Wege machen das Einkaufen unbequem, Musik und Licht sorgen für Wohlgefühl. Löse diesen scheinbaren Widerspruch auf.", "a": "Beide Maßnahmen verfolgen dasselbe Ziel: möglichst lange Verweildauer und möglichst viele Produktkontakte. Der lange Weg sorgt für Dauer und Kontakte, die Wohlfühlfaktoren verhindern, dass daraus Frust wird. Grenze: Wird es zu unbequem, wechseln Kunden zur Konkurrenz.", "afb": "II/III", "stufe": 2}, {"id": "D5", "kat": "D", "q": "Discounter verkaufen aus Kartons und fast ohne Dekoration. Warum ist auch das Verkaufsförderung?", "a": "Die schlichte Einrichtung signalisiert „hier ist es billig“ (Preisimage, vgl. Halo-Effekt): Kunden schließen von der Optik auf niedrige Preise und vergleichen weniger. Zugleich spart der Händler Personal- und Einräumkosten. Verkaufsförderung passt sich also der Strategie und der Zielgruppe an.", "afb": "II", "stufe": 2}, {"id": "D6", "kat": "D", "q": "Ein Wein für 39,99 € wird fast nie gekauft, bleibt aber neben Weinen für 6–12 € im Regal. Warum lohnt sich das?", "a": "Er wirkt als Anker: Neben 39,99 € wirkt ein Wein für 11,99 € preiswert. Viele meiden das billigste und das teuerste Produkt und wählen die Mitte (Kompromisseffekt); der teure Wein verschiebt diese Mitte nach oben. Der Gewinn entsteht bei den mittelpreisigen Weinen.", "afb": "II/III", "stufe": 2}, {"id": "D7", "kat": "D", "q": "Champions-League-Finale: Entwickle eine Zweitplatzierung (Ort, Produkte) und nenne zwei psychologische Wirkungen.", "a": "Beispiel: Aufbau im Hauptgang nahe dem Eingang mit Chips, Dips, Tiefkühlpizza, Softdrinks, Fan-Schild „Alles für den Fußballabend – nur diese Woche!“. Wirkungen: Verbundplatzierung, Anlass/Emotion (Vorfreude, Gemeinschaft), Verknappung, Bequemlichkeit. Jede schlüssige Idee mit Ort, Produkten und zwei Wirkungen wird gewertet.", "afb": "III", "stufe": 2}, {"id": "D8", "kat": "D", "q": "Warum kaufen wir an der Kasse so oft spontan – und warum würde ein Homo oeconomicus das nicht tun?", "a": "Beim Warten entscheiden wir schnell, automatisch und emotional (System 1): Langeweile, Appetit und kleine Beträge führen zum Griff ins Regal; nach vielen Entscheidungen lässt die Selbstkontrolle nach, Kinder verstärken den Druck. Der Homo oeconomicus würde rational Kosten und Nutzen abwägen und nur Geplantes kaufen. Reale Menschen handeln begrenzt rational – das nutzt die Kassenzone.", "afb": "II", "stufe": 2}, {"id": "D9", "kat": "D", "q": "„Mit Einkaufszettel wirken die Tricks bei mir nicht!“ Beurteile diese Aussage.", "a": "Teilweise richtig: Der Zettel schützt vor vielen Spontankäufen (Quengelware, Stopper, lange Wege). Er schützt aber nicht vor der Wahl der Variante (teures Markenmüsli in Augenhöhe statt Eigenmarke), vor teuren Großpackungen, Mogelpackungen oder Ankerpreisen. Fazit: gute Gegenstrategie, aber keine Immunität – dazu Grundpreise vergleichen und oben/unten ins Regal schauen.", "afb": "III", "stufe": 2}, {"id": "D10", "kat": "D", "q": "200 Joghurts erreichen in 3 Tagen ihr Mindesthaltbarkeitsdatum. Entwickle zwei Maßnahmen und beurteile eine aus Sicht der Nachhaltigkeit.", "a": "Maßnahmen: roter Rabattaufkleber „–30 %“; Zweitplatzierung in einer Kühltruhe an der Kasse; Bündel „2 Joghurt + Müsli“; Hinweis „Rette mich!“. Beurteilung: Der Rabatt verhindert Lebensmittelverschwendung (ökologisch) und Verluste des Händlers (ökonomisch); Risiko: Kunden kaufen mehr als sie verbrauchen, die Verschwendung verlagert sich in den Haushalt. Insgesamt eher positiv, wenn die Menge zum Bedarf passt.", "afb": "III", "stufe": 2}, {"id": "B1", "kat": "B", "begriff": "Halo-Effekt", "q": "Erkläre den Fachbegriff „Halo-Effekt“ und nenne ein Beispiel aus dem Supermarkt.", "a": "Ein auffälliges Merkmal überstrahlt das Gesamturteil. Beispiel: Frische Obstabteilung → „der ganze Markt ist frisch“.", "afb": "I/II", "stufe": 1}, {"id": "B2", "kat": "B", "begriff": "Priming", "q": "Erkläre den Fachbegriff „Priming“ und nenne ein Beispiel aus dem Supermarkt.", "a": "Ein Reiz aktiviert unbewusst Bedürfnisse und beeinflusst späteres Verhalten. Beispiel: Backduft am Eingang → mehr Snacks im Wagen.", "afb": "I/II", "stufe": 1}, {"id": "B3", "kat": "B", "begriff": "Stopper", "q": "Erkläre den Fachbegriff „Stopper“ und nenne ein Beispiel aus dem Supermarkt.", "a": "Warenaufbau mitten im Laufweg mit auffälligem Preisschild. Beispiel: Chips-Berg mit rotem Schild im Hauptgang.", "afb": "I/II", "stufe": 1}, {"id": "B4", "kat": "B", "begriff": "Farbpsychologie", "q": "Erkläre den Fachbegriff „Farbpsychologie“ und nenne ein Beispiel aus dem Supermarkt.", "a": "Farben lösen Gefühle und Erwartungen aus. Beispiel: Rote Angebotsschilder, grüne Bio-Hinweise.", "afb": "I/II", "stufe": 1}, {"id": "B5", "kat": "B", "begriff": "Verlustaversion", "q": "Erkläre den Fachbegriff „Verlustaversion“ und nenne ein Beispiel aus dem Supermarkt.", "a": "Verluste wiegen schwerer als gleich große Gewinne. Beispiel: „Nur heute –30 %“ – Angst, das Angebot zu verpassen.", "afb": "I/II", "stufe": 1}, {"id": "B6", "kat": "B", "begriff": "Knappheitseffekt", "q": "Erkläre den Fachbegriff „Knappheitseffekt“ und nenne ein Beispiel aus dem Supermarkt.", "a": "Was knapp erscheint, halten wir für wertvoller. Beispiel: „Nur solange der Vorrat reicht“, limitierte Sorten.", "afb": "I/II", "stufe": 1}, {"id": "B7", "kat": "B", "begriff": "Reziprozität", "q": "Erkläre den Fachbegriff „Reziprozität“ und nenne ein Beispiel aus dem Supermarkt.", "a": "Wer etwas geschenkt bekommt, möchte sich revanchieren. Beispiel: Gratis-Kostprobe an der Käsetheke.", "afb": "I/II", "stufe": 1}, {"id": "B8", "kat": "B", "begriff": "Ankereffekt", "q": "Erkläre den Fachbegriff „Ankereffekt“ und nenne ein Beispiel aus dem Supermarkt.", "a": "Die erste Zahl, die wir sehen, prägt unser Urteil über weitere Zahlen. Beispiel: „Statt 14,99 €“ lässt 9,99 € günstig wirken.", "afb": "I/II", "stufe": 1}], "kat": {"R": {"name": "Raum & Wege", "icon": "🧭", "farbe": "2F6690", "hell": "DCE8F2"}, "P": {"name": "Regal & Platzierung", "icon": "🗄️", "farbe": "6A4C93", "hell": "E9E2F2"}, "S": {"name": "Sinnesreize", "icon": "👃", "farbe": "B07D10", "hell": "F7ECD2"}, "M": {"name": "Preis & Menge", "icon": "🏷️", "farbe": "2F7D4F", "hell": "DFF0E5"}, "Ψ": {"name": "Psychologie", "icon": "🧠", "farbe": "B3395F", "hell": "F6DFE6"}, "D": {"name": "Weiterdenken", "icon": "💡", "farbe": "C1652B", "hell": "F8E3D4"}, "B": {"name": "Fachbegriff", "icon": "📘", "farbe": "0F2130", "hell": "E4E8EC"}}};
+const CARDS = DATA.cards, KAT = DATA.kat;
+const KAT_ORDER = ["R","P","S","M","Ψ","D","B"];
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const sterne = n => "★".repeat(n) + '<span style="color:#d6d6d6">' + "☆".repeat(3 - n) + "</span>";
+
+/* ---------- Setup ---------- */
+const ANZAHL = [6, 10, 16, 20, "alle"];
+let gewaehlteAnzahl = 10;
+["0","1","2"].forEach(s => $("#c" + s).textContent = CARDS.filter(c => s === "0" || c.stufe == s).length);
+$("#anzahl").innerHTML = ANZAHL.map(n => `<div class="wahl"><input type="radio" name="anz" id="a-${n}" value="${n}" ${n === 10 ? "checked" : ""}><label for="a-${n}"><b>${n === "alle" ? "Alle" : n}</b><span>${n === "alle" ? "alle passenden Karten" : "Fragen"}</span></label></div>`).join("");
+$("#kats").innerHTML = KAT_ORDER.map(k => `<label style="border-color:#${KAT[k].farbe}55"><input type="checkbox" value="${k}" checked> ${KAT[k].icon} ${esc(KAT[k].name)}</label>`).join("");
+
+function modus() { return document.querySelector('input[name="modus"]:checked').value; }
+function stufe() { return +document.querySelector('input[name="stufe"]:checked').value; }
+function pool() {
+  const ks = [...document.querySelectorAll("#kats input:checked")].map(i => i.value);
+  return CARDS.filter(c => ks.includes(c.kat) && (stufe() === 0 || c.stufe === stufe()));
+}
+function setupAktualisieren() {
+  const m = modus();
+  $("#lab-n2").classList.toggle("hidden", m !== "duell");
+  $("#lab-n1").firstChild.textContent = m === "duell" ? "Name Spieler 1" : m === "team" ? "Teamname" : "Dein Name";
+  $("#n1").placeholder = m === "duell" ? "Spieler 1" : m === "team" ? "Team" : "Ich";
+  const a = document.querySelector('input[name="anz"]:checked').value;
+  const p = pool().length;
+  let n = a === "alle" ? p : Math.min(+a, p);
+  if (m === "duell" && n % 2) n--;
+  const info = $("#anzahl-info");
+  if (p === 0) info.textContent = "Mit dieser Auswahl gibt es keine Karten – bitte Bereiche oder Stufe ändern.";
+  else info.textContent = `Es werden ${n} Fragen gestellt` + (m === "duell" ? ` (${n / 2} pro Spieler).` : ".") + (n < (a === "alle" ? p : +a) ? ` Mehr passende Karten gibt es mit dieser Auswahl nicht.` : "");
+  $("#start").disabled = n < (m === "duell" ? 2 : 1);
+  return n;
+}
+document.querySelectorAll("#setup input").forEach(i => i.addEventListener("change", setupAktualisieren));
+setupAktualisieren();
+
+/* ---------- Spiel ---------- */
+let G = null, timerId = null;
+function starten(kartenVorgabe) {
+  const m = modus(), n = setupAktualisieren();
+  const spieler = m === "duell"
+    ? [{ name: $("#n1").value.trim() || "Spieler 1", farbe: "p1" }, { name: $("#n2").value.trim() || "Spieler 2", farbe: "p2" }]
+    : [{ name: $("#n1").value.trim() || (m === "team" ? "Team" : "Ich"), farbe: "p1" }];
+  spieler.forEach(s => s.sterne = 0);
+  let karten = kartenVorgabe || shuffle(pool()).slice(0, n);
+  if (m === "duell" && karten.length % 2) karten = karten.slice(0, karten.length - 1);
+  G = { m, spieler, karten, i: 0, verlauf: [], zeit: +document.querySelector('input[name="zeit"]:checked').value, stufe: stufe() };
+  $("#setup").classList.add("hidden"); $("#ergebnis").classList.add("hidden"); $("#spiel").classList.remove("hidden");
+  $("#abbrechen").classList.remove("hidden");
+  frage();
+}
+function konten(ziel, aktiv) {
+  ziel.innerHTML = G.spieler.map((s, i) => `<div class="konto ${s.farbe} ${i === aktiv ? "aktiv" : ""}" id="konto-${i}"><div class="n">${G.m === "duell" ? (i ? "⚔️ " : "⚔️ ") : G.m === "team" ? "👥 " : "🧑 "}${esc(s.name)}</div><div class="s">⭐ ${s.sterne}</div></div>`).join("");
+}
+function amZug() { return G.m === "duell" ? G.i % 2 : 0; }
+function frage() {
+  stopTimer();
+  const c = G.karten[G.i], k = KAT[c.kat], z = amZug();
+  konten($("#scorebar"), G.m === "duell" ? z : -1);
+  $("#f-text").textContent = `Frage ${G.i + 1} von ${G.karten.length}`;
+  $("#f-stufe").textContent = c.stufe === 2 ? "🚀 Könner" : "🌱 Anfänger";
+  $("#f-balken").style.width = (G.i / G.karten.length * 100) + "%";
+  const band = $("#band"); band.style.background = "#" + k.hell; band.style.color = "#" + k.farbe;
+  $("#frage").style.borderColor = "#" + k.farbe + "66";
+  $("#kat").textContent = `${k.icon} ${k.name} · ${c.id}`;
+  $("#wer").innerHTML = G.m === "duell" ? `Frage an: <span style="color:var(--${G.spieler[z].farbe})">${esc(G.spieler[z].name)}</span>` : "";
+  const bg = $("#begriff");
+  if (c.begriff) { bg.textContent = c.begriff; bg.classList.remove("hidden"); $("#qtext").textContent = "Erkläre den Fachbegriff und nenne ein Beispiel aus dem Supermarkt."; }
+  else { bg.classList.add("hidden"); $("#qtext").textContent = c.q; }
+  $("#atext").textContent = c.a;
+  $("#loesung").classList.add("hidden"); $("#bewerten").classList.add("hidden");
+  $("#zeigen").classList.remove("hidden"); $("#zeigen").focus();
+  $("#bew-frage").textContent = G.m === "duell"
+    ? `${G.spieler[1 - z].name}: Wie gut hat ${G.spieler[z].name} geantwortet?`
+    : G.m === "team" ? "Wie gut hat euer Team geantwortet?" : "Wie gut hast du geantwortet? Sei ehrlich zu dir!";
+  if (G.zeit) startTimer(G.zeit); else $("#timer").classList.add("hidden");
+}
+function startTimer(sek) {
+  let rest = sek; const t = $("#timer"); t.classList.remove("hidden", "knapp");
+  const draw = () => { t.textContent = "⏱ " + rest + " s"; t.classList.toggle("knapp", rest <= 10); };
+  draw();
+  timerId = setInterval(() => { rest--; draw(); if (rest <= 0) { stopTimer(); t.textContent = "⏱ Zeit ist um!"; } }, 1000);
+}
+function stopTimer() { if (timerId) clearInterval(timerId); timerId = null; }
+function zeigen() {
+  if ($("#zeigen").classList.contains("hidden")) return;
+  stopTimer();
+  $("#loesung").classList.remove("hidden"); $("#bewerten").classList.remove("hidden"); $("#zeigen").classList.add("hidden");
+  $("#bewerten").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function bewerten(n, btn) {
+  if ($("#bewerten").classList.contains("hidden") || G.sperre) return;
+  G.sperre = true;
+  const z = amZug(), c = G.karten[G.i];
+  G.spieler[z].sterne += n;
+  G.verlauf.push({ c, z, n });
+  // Sterne fliegen zum Konto
+  const ziel = document.getElementById("konto-" + z);
+  if (n > 0 && btn && ziel) {
+    const a = btn.getBoundingClientRect(), b = ziel.getBoundingClientRect();
+    for (let s = 0; s < n; s++) {
+      const f = document.createElement("div"); f.className = "flug"; f.textContent = "⭐";
+      f.style.left = (a.left + a.width / 2 - 17) + "px"; f.style.top = (a.top) + "px"; document.body.appendChild(f);
+      setTimeout(() => { f.style.left = (b.left + b.width / 2 - 17) + "px"; f.style.top = (b.top + 4) + "px"; f.style.opacity = ".3"; f.style.transform = "scale(.6)"; }, 30 + s * 120);
+      setTimeout(() => f.remove(), 950 + s * 120);
+    }
+  }
+  setTimeout(() => {
+    G.sperre = false; G.i++;
+    if (G.i >= G.karten.length) ende(); else { frage(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  }, n > 0 ? 900 : 300);
+  konten($("#scorebar"), G.m === "duell" ? z : -1);
+  const k = document.getElementById("konto-" + z); if (k) k.querySelector(".s").textContent = "⭐ " + (G.spieler[z].sterne - n);
+  setTimeout(() => { const k2 = document.getElementById("konto-" + z); if (k2) k2.querySelector(".s").textContent = "⭐ " + G.spieler[z].sterne; }, 750);
+}
+function ende() {
+  stopTimer();
+  $("#spiel").classList.add("hidden"); $("#ergebnis").classList.remove("hidden");
+  const max = G.m === "duell" ? G.karten.length / 2 * 3 : G.karten.length * 3;
+  const s = $("#sieger");
+  if (G.m === "duell") {
+    const [a, b] = G.spieler;
+    if (a.sterne === b.sterne) s.innerHTML = `<div class="pokal">🤝</div><h2>Unentschieden!</h2><p>Beide haben ${a.sterne} von ${max} Sternen gesammelt.</p>`;
+    else { const w = a.sterne > b.sterne ? a : b; s.innerHTML = `<div class="pokal">🏆</div><h2>${esc(w.name)} gewinnt!</h2><p>mit ${w.sterne} von ${max} möglichen Sternen</p>`; }
+  } else {
+    const p = G.spieler[0].sterne, q = p / max;
+    const urteil = q >= .85 ? ["🏆", "Verkaufstricks-Profi!"] : q >= .6 ? ["🥈", "Gut gemacht!"] : q >= .35 ? ["📚", "Auf dem richtigen Weg"] : ["🌱", "Da geht noch was – wiederhole die Lernkarten"];
+    s.innerHTML = `<div class="pokal">${urteil[0]}</div><h2>${urteil[1]}</h2><p>${esc(G.spieler[0].name)}: ${p} von ${max} Sternen (${Math.round(q * 100)} %)</p>`;
+  }
+  konten($("#end-score"), -1);
+  $("#verlauf").innerHTML = `<tr><th>#</th><th>Frage</th>${G.m === "duell" ? "<th>Spieler</th>" : ""}<th>Sterne</th></tr>` +
+    G.verlauf.map((v, i) => `<tr><td>${i + 1}</td><td><span class="tag">${KAT[v.c.kat].icon} ${v.c.id}</span> ${esc(v.c.begriff || v.c.q)}</td>${G.m === "duell" ? `<td>${esc(G.spieler[v.z].name)}</td>` : ""}<td class="gs">${sterne(v.n)}</td></tr>`).join("");
+  const schwach = G.verlauf.filter(v => v.n <= 1);
+  $("#schwach").disabled = schwach.length === 0 || (G.m === "duell" && schwach.length < 2);
+  $("#schwach").textContent = `Schwache Karten wiederholen (${schwach.length})`;
+}
+
+/* ---------- Ereignisse ---------- */
+$("#start").onclick = () => starten();
+$("#zeigen").onclick = zeigen;
+document.querySelectorAll(".sterne button").forEach(b => b.onclick = () => bewerten(+b.dataset.s, b));
+$("#nochmal").onclick = () => starten();
+$("#schwach").onclick = () => { let k = shuffle(G.verlauf.filter(v => v.n <= 1).map(v => v.c)); starten(k); };
+$("#neu").onclick = $("#abbrechen").onclick = () => {
+  if (!$("#spiel").classList.contains("hidden") && !confirmAbbruch()) return;
+  stopTimer(); $("#spiel").classList.add("hidden"); $("#ergebnis").classList.add("hidden"); $("#setup").classList.remove("hidden"); $("#abbrechen").classList.add("hidden");
+};
+function confirmAbbruch() {
+  const b = $("#abbrechen");
+  if (b.dataset.sicher) { delete b.dataset.sicher; b.textContent = "⟲ Neues Spiel"; return true; }
+  b.dataset.sicher = "1"; b.textContent = "Wirklich abbrechen? Nochmal klicken";
+  setTimeout(() => { delete b.dataset.sicher; b.textContent = "⟲ Neues Spiel"; }, 3000);
+  return false;
+}
+document.addEventListener("keydown", e => {
+  if ($("#spiel").classList.contains("hidden") || e.target.tagName === "INPUT") return;
+  if (e.key === " " || e.key === "Enter") { if (!$("#zeigen").classList.contains("hidden")) { e.preventDefault(); zeigen(); } }
+  if (["0", "1", "2", "3"].includes(e.key)) { const b = document.querySelector(`.sterne button[data-s="${e.key}"]`); bewerten(+e.key, b); }
+});
+</script>
+</body>
+</html>
